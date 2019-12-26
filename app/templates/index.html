@@ -15,8 +15,8 @@
         {% if user is none %}
         <div id="loader">Loading...</div>
         {% endif %}
-        {% if user is not none %}
-          <h2>Hi, {{ user.name }}!</h2>
+        {% if user_name is not none %}
+          <h2>Hi, {{ user_name }}!</h2>
           <p><a href="{{ url_for('session_logout') }}">Logout</a></p>
         {% endif %}
 
@@ -37,12 +37,13 @@
           return v ? v[2] : null;
         }
 
-        var postIdTokenToSessionLogin = function(url, idToken, csrfToken) {
+        var postIdTokenToSessionLogin = function(url, idToken, csrfToken, providerData) {
           // POST to session login endpoint.
+          console.log(providerData);
           return $.ajax({
             type:'POST',
             url: url,
-            data: {idToken: idToken, csrfToken: csrfToken},
+            data: {idToken: idToken, csrfToken: csrfToken, providerData: providerData}
           });
         };
 
@@ -53,7 +54,9 @@
               // CSRF protection should be taken into account.
               // ...
               const csrfToken = getCookie('csrfToken')
-              postIdTokenToSessionLogin('/sessionLogin', idToken, csrfToken)
+              var providerData = JSON.stringify(user.providerData[0]);
+
+              postIdTokenToSessionLogin('/sessionLogin', idToken, csrfToken, providerData)
               .then((response)=>{
                 // A page redirect would suffice as the persistence is set to NONE.
                 console.log(response);
