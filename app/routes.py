@@ -18,7 +18,7 @@ def get_user_from_token(token):
     return user
 
 def get_user_from_request(request):
-    session_cookie = request.cookies.get('session')
+    session_cookie = request.cookies.get('nowpages')
     user = None
     if session_cookie:
         try:
@@ -43,7 +43,6 @@ def session_login():
     try:
         # Create the session cookie. This will also verify the ID token in the process.
         # The session cookie will have the same claims as the ID token.
-        session_cookie = auth.create_session_cookie(id_token, expires_in=expires_in)
         user = get_user_from_token(id_token)
         print(user)
         decoded_token = auth.verify_id_token(id_token)
@@ -59,7 +58,7 @@ def session_login():
         db.session.commit()
         response = jsonify({'status': 'success'})
         expires = datetime.datetime.now() + expires_in
-        response.set_cookie('session', id_token)
+        response.set_cookie('nowpages', id_token, expires=expires)
         return response
     except Exception:
         traceback.print_exc()
