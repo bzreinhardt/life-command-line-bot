@@ -6,19 +6,27 @@
         <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     </head>
     <body>
-        <h1>Welcome to My Awesome App</h1>
+        <h1>Welcome to awesome app</h1>
 
         {% for message in get_flashed_messages() %}
             <p><b>Error</b>: {{ message }}</p>
         {% endfor %}
-        <div id="firebaseui-auth-container"></div>
-        {% if user is none %}
-        <div id="loader">Loading...</div>
-        {% endif %}
+
+        {% if user_name is none %}
+        <button className="btn btn-outline-success"
+                onClick="login()"
+                type="button"
+        >
+         Log In with Twitter
+       </button>
+       {% endif %}
+
+
         {% if user_name is not none %}
           <h2>Hi, {{ user_name }}!</h2>
           <p><a href="{{ url_for('session_logout') }}">Logout</a></p>
         {% endif %}
+
 
         <!-- Insert these scripts at the bottom of the HTML, but before you use any Firebase services -->
 
@@ -32,41 +40,44 @@
         <script src="https://www.gstatic.com/firebasejs/7.6.1/firebase-auth.js"></script>
         <script src="https://www.gstatic.com/firebasejs/7.6.1/firebase-firestore.js"></script>
         <script>
-        function getCookie(name) {
-          var v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
-          return v ? v[2] : null;
-        }
 
-        var postIdTokenToSessionLogin = function(url, idToken, csrfToken, providerData) {
+
+        var postIdTokenToSessionLogin = function(url, idToken, providerData) {
           // POST to session login endpoint.
           console.log(providerData);
           return $.ajax({
             type:'POST',
             url: url,
-            data: {idToken: idToken, csrfToken: csrfToken, providerData: providerData}
+            data: {idToken: idToken, providerData: providerData}
           });
         };
 
-        var handleSignedInUser = function(user) {
-            user.getIdToken()
-            .then(idToken=> {
-              // Session login endpoint is queried and the session cookie is set.
-              // CSRF protection should be taken into account.
-              // ...
-              const csrfToken = getCookie('csrfToken')
-              var providerData = JSON.stringify(user.providerData[0]);
-
-              postIdTokenToSessionLogin('/sessionLogin', idToken, csrfToken, providerData)
+        var login = function() {
+          firebase.auth().signInWithPopup(new firebase.auth.TwitterAuthProvider())
+          .then((userCredential) => {
+            // Get the Twitter screen name.
+            userCredential.user.getIdToken()
+            .then(idToken => {
+              var providerData = userCredential.user.providerData[0];
+              // This is unecessary but if you want to get a twitter id you can do that
+              //providerData['twitter_id'] = userCredential.additionalUserInfo.username;
+              var providerDataString = JSON.stringify(providerData);
+              postIdTokenToSessionLogin('/sessionLogin', idToken, providerDataString)
               .then((response)=>{
                 // A page redirect would suffice as the persistence is set to NONE.
-                console.log(response);
+                //console.log(response);
                 return firebase.auth().signOut();
               })
               .then(()=>{
                 window.location.assign('/');
               });
             });
+          })
+          .catch((error) => {
+            // An error occurred.
+          });
         };
+
           // Get this with this website: https://support.google.com/firebase/answer/7015592
           const firebaseConfig = {
             apiKey: "AIzaSyAuI1koAOlCPbG8Px4FzR6dqdHL39Kex5o",
@@ -81,43 +92,9 @@
           // Initialize Firebase
           firebase.initializeApp(firebaseConfig);
           // Initialize the FirebaseUI Widget using Firebase.
-
-          var ui = new firebaseui.auth.AuthUI(firebase.auth());
-          // As httpOnly cookies are to be used, do not persist any state client side.
           firebase.auth().setPersistence(firebase.auth.Auth.Persistence.NONE);
-          var uiConfig = {
-            callbacks: {
-              // Called when the user has been successfully signed in.
-              signInSuccess: function(user, credential, redirectUrl) {
-                // Handle signed in user.
-                handleSignedInUser(user);
-                // Do not automatically redirect.
-                return false;
-              },
-              uiShown: function() {
-                // The widget is rendered.
-                // Hide the loader.
-                document.getElementById('loader').style.display = 'none';
-              }
-            },
-            // Will use popup for IDP Providers sign-in flow instead of the default, redirect.
-            signInFlow: 'popup',
 
-            signInOptions: [
-              // Leave the lines as is for the providers you want to offer your users.
-              firebase.auth.GoogleAuthProvider.PROVIDER_ID,
-              firebase.auth.TwitterAuthProvider.PROVIDER_ID,
-            ],
-            // Terms of service url.
-            tosUrl: '<your-tos-url>',
-            // Privacy policy url.
-            privacyPolicyUrl: '<your-privacy-policy-url>'
-          };
-          // The start method will wait until the DOM is loaded.
-        var render_login = {{render_login}};
-        if(render_login) {
-          ui.start('#firebaseui-auth-container', uiConfig);
-        }
+
 
 
         </script>
