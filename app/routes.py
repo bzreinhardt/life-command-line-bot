@@ -18,7 +18,7 @@ def get_user_from_token(token):
     return user
 
 def get_user_from_request(request):
-    session_cookie = request.cookies.get('nowpages')
+    session_cookie = request.cookies.get('nameofyourapp')
     user = None
     if session_cookie:
         try:
@@ -58,7 +58,7 @@ def session_login():
         db.session.commit()
         response = jsonify({'status': 'success'})
         expires = datetime.datetime.now() + expires_in
-        response.set_cookie('nowpages', id_token, expires=expires)
+        response.set_cookie('nameofyourapp', id_token, expires=expires)
         return response
     except Exception:
         traceback.print_exc()
@@ -68,7 +68,7 @@ def session_login():
 @app.route('/sessionLogout', methods=['GET','POST'])
 def session_logout():
     response = make_response(redirect('/'))
-    response.set_cookie('session', expires=0)
+    response.set_cookie('nameofyourapp', expires=0)
     return response
 
 
