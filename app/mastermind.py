@@ -1,6 +1,19 @@
 from app.models import Message, KPI
 from app import db
 
+def create_log(data):
+    if 'type' not in data:
+        return 1
+    type = data['type']
+    value = None
+    if 'value' in data:
+        value = data['value']
+    kpi = KPI(type, value)
+    db.session.add(kpi)
+    db.session.commit()
+    return "created %s kpi with value %s"%(type, value)
+
+
 def get_response(msg):
     """
     you can place your mastermind AI here

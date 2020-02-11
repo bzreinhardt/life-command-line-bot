@@ -7,7 +7,21 @@ import traceback
 import json
 import pdb
 import telegram
-from app.mastermind import get_response
+from app.mastermind import get_response, create_log
+
+
+@app.route('/api/log', methods=['POST'])
+def create_log_api():
+    data = request.form.copy()
+    print(data)
+    print(data['type'])
+    response = create_log(data)
+    if response == 1:
+        out = "Error creating log"
+    else:
+        out = response
+    print(out)
+    return jsonify({'status':out})
 
 
 @app.route('/{}'.format(app.config['TOKEN']), methods=['POST'])
