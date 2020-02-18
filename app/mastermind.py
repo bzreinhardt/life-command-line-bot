@@ -1,5 +1,21 @@
 from app.models import Message, KPI
-from app import db
+from app import app, db
+from fuzzywuzzy import process
+
+def get_pomodoro_project(value):
+    project = value
+    if value == 'last':
+        #get the last logged get_pomodo
+        last = KPI.query.filter_by(type='pomo').order_by(KPI.received.desc()).first()
+        project = last.value
+    else:
+        highest = process.extractOne(value, app.config['LIST_OF_PROJECTS'])
+        if highest[1] > app.config['CUTOFF_VALUE']:
+            project = highest[0]
+        else:
+            project = "Non-project pomo: %s"%value
+    return project
+
 
 def create_log(data):
     if 'type' not in data:
@@ -8,10 +24,12 @@ def create_log(data):
     value = None
     if 'value' in data:
         value = data['value']
+    if type.lower().startswith('pomo'):
+        value = get_pomodoro_project(value)
     kpi = KPI(type, value)
     db.session.add(kpi)
     db.session.commit()
-    return "created %s kpi with value %s"%(type, value)
+    return "created %s log with value %s"%(type, value)
 
 
 def get_response(msg):
@@ -27,9 +45,7 @@ def get_response(msg):
         type = parts[1]
         value = None
         if len(parts) > 2:
-            value = parts[2]
-        kpi = KPI(type, value)
-        db.session.add(kpi)
-        db.session.commit()
-        out = "created %s kpi with value %s"%(type, value)
+            value = ".".join(parts[2:])
+        data = {'type':type, 'value':value}
+        out = create_log(data)
     return out
